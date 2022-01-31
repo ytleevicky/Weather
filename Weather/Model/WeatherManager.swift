@@ -14,18 +14,35 @@ protocol WeatherManagerDelegate {
 }
 
 struct WeatherManager {
-    let weatherURL = "https://api.openweathermap.org/data/2.5/weather?appid=d4dea7a1697f1b1b8a9584be7e8ec1b4&units=metric"
+    let weatherURL = "https://api.openweathermap.org/data/2.5/weather?units=metric"
+    
+    private var apiKey: String {
+        
+        guard let filePath = Bundle.main.path(forResource: "OpenWeather-Info", ofType: "plist") else {
+            fatalError("Couldn't find file 'OpenWeather-Info.plist'.")
+        }
+        
+        let plist = NSDictionary(contentsOfFile: filePath)
+        guard let value = plist?.object(forKey: "API_KEY") as? String else {
+            fatalError("Couldn't find key 'API_KEY' in 'OpenWeather-Info.plist'.")
+        }
+        
+        if (value.starts(with: "_")) {
+            fatalError("Get an API key at https://openweathermap.org/api.")
+        }
+        return value
+    }
     
     var delegate: WeatherManagerDelegate?
     
     func fetchWeather(cityName: String) {
         let formattedCityName = cityName.components(separatedBy: .whitespaces).joined()
-        let urlString = "\(weatherURL)&q=\(formattedCityName)"
+        let urlString = "\(weatherURL)&appid=\(apiKey)&q=\(formattedCityName)"
         performRequest(with: urlString)
     }
     
     func fetchWeather(latitude: CLLocationDegrees, longitude: CLLocationDegrees) {
-        let urlString = "\(weatherURL)&lat=\(latitude)&lon=\(longitude)"
+        let urlString = "\(weatherURL)&appid=\(apiKey)&lat=\(latitude)&lon=\(longitude)"
         performRequest(with: urlString)
     }
     
@@ -71,7 +88,6 @@ struct WeatherManager {
             delegate?.didFailWithError(error: error)
             return nil
         }
-        
     }
     
 }
